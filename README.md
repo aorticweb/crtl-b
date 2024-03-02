@@ -1,2 +1,2 @@
 # crtl-b
-ai browser extension
+ai browser text re-write extension

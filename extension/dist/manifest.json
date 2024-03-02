@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "CTRL B",
+  "version": "1.0",
+  "description": "Re write text using ai",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon.png",
+      "48": "images/icon.png",
+      "128": "images/icon.png"
+    }
+  },
+  "externally_connectable": {
+    "ids": ["*"]
+  },
+  "commands": {
+    "grab-selected-text": {
+      "suggested_key": {
+        "default": "Ctrl+B",
+        "mac": "Command+B"
+      },
+      "description": "extension entry point grab selected text and perform downstream actions"
+    }
+  },
+  "permissions": ["scripting", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
