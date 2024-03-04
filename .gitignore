@@ -15,4 +15,11 @@ Cargo.lock
 
 node_modules/
 extension/dist/**/*.js
+extension/dist/**/*.wasm
 .DS_Store
+
+
+# Added by cargo
+
+/target
+/pkg
