@@ -7,8 +7,14 @@ chrome.commands.onCommand.addListener(async (command: string) => {
   if (command === "grab-selected-text") {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       let selected = await chrome.tabs.sendMessage(tabs[0].id!, { action: "grabSelectedText" });
-      let generated = await generate(selected, "http://localhost:11434/", Model.Llama2, Task.Summarize);
-      let stored = await chrome.tabs.sendMessage(tabs[0].id!, { action: "storeToClipBoard", content: generated});
+      await generate(selected, "http://localhost:11434/", Model.Llama2, Task.Summarize)
+      .then(async (generated) => {
+        await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMOutput", content: generated});
+      })
+      .catch(async (e) => {
+        await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMFailure"});
+        console.error(e);
+      })
     });
   }
 });

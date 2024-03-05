@@ -32,7 +32,7 @@ async fn handle_error_status_code(resp: reqwest::Response) -> CTRLBackendError {
     match resp.status() {
         StatusCode::BAD_REQUEST => CTRLBackendError::LLM("Bad request".into()),
         StatusCode::NOT_FOUND => CTRLBackendError::LLMConnection("is ollama running?".into()),
-        code => CTRLBackendError::LLM(ErrContent {
+        code => CTRLBackendError::Unexpected(ErrContent {
             details: "Unexpected ollama status code".to_string(),
             debug: Some(format!("{}: {}", code, text_or_null(resp).await)),
         }),
@@ -43,7 +43,7 @@ fn extract_ollama_api_error(err: reqwest::Error) -> CTRLBackendError {
     if err.is_timeout() {
         return CTRLBackendError::LLMTimeoutError(ErrContent::from_error("Request timeout", err));
     }
-    CTRLBackendError::LLM(ErrContent::from_error("Unexpected API", err))
+    CTRLBackendError::LLM(ErrContent::from_error("Unexpected API call failure", err))
 }
 
 pub async fn generate(

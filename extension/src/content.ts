@@ -7,11 +7,16 @@ chrome.runtime.onMessage.addListener(async (request: any, sender, sendResponse) 
     setTextContent("loading...");
     return;
   }
-  if (request.action === "storeToClipBoard") {
+  if (request.action === "dispLLMOutput") {
     setTextContent(request.content);
     console.log("setting text box content to: ", request.content);
-    await navigator.clipboard.writeText(request.content);
-    // sendResponse("copied to clipboard");
+    sendResponse("content was displayed");
+    return;
+  }
+  if (request.action === "dispLLMFailure") {
+    console.log("setting text box content to error");
+    setTextContent("failed to perform LLM Task");
+    sendResponse("error message was displayed");
     return;
   }
 });
@@ -59,9 +64,14 @@ function showPopup() {
     copyButton.style.marginTop = '10px';
     
     // Event listener for the Copy button
-    copyButton.addEventListener('click', () => {
-      textbox.select();
-      document.execCommand('copy');
+    copyButton.addEventListener('click', async () => {
+      const textBox = document.getElementById('text-box') as HTMLInputElement;
+      if (textBox) {
+        console.log("copying text box content to clipboard:", textBox.value);
+        await navigator.clipboard.writeText(textBox.value);
+      } else {
+      console.log('Textbox not found!');
+      }
     });
 
     // Add the textbox and copy button to the popup container
@@ -76,9 +86,9 @@ function showPopup() {
   popup.style.display = 'block';
 
   // Close the popup when clicking outside of it
-  window.addEventListener('click', (event) => {
-    if (event.target !== popup && event.target !== copyButton && event.target !== textbox) {
-      popup.style.display = 'none';
-    }
-  }, { capture: true, once: true });
+  // window.addEventListener('click', (event) => {
+  //   if (event.target !== popup && event.target !== copyButton && event.target !== textbox) {
+  //     popup.style.display = 'none';
+  //   }
+  // }, { capture: true, once: true });
 }

@@ -116,7 +116,6 @@ pub async fn generate(text: String, url: String, model: Model, task: Task) -> js
         let result = ollama::generate(text, url, model, task).await;
         match result {
             Ok(content) => {
-                log(&content);
                 Ok(JsValue::from_str(&content))
             }
             Err(err) => {
