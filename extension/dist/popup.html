@@ -1,4 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <script src="popup.js"></script>
+<head>
+  <title>Copy Text</title>
+  <style>
+    /* Add your CSS styles */
+    body {
+      min-width: 200px;
+      padding: 10px;
+    }
+    #text-container {
+      margin-bottom: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="text-container">
+    <textarea id="text-box" rows="4" cols="20">Hello</textarea>
+  </div>
+  <button id="copy-button">Copy</button>
+
+  <script src="./target/popup.js"></script>
+</body>
 </html>
