@@ -125,10 +125,14 @@ pub async fn generate(text: String, url: String, model: Model, task: Task) -> js
 }
 
 #[wasm_bindgen]
-pub async fn stream(text: String, url: String, model: Model, task: Task) -> js_sys::Promise {
+pub async fn stream(text: String, url: String, model: Model, task: Task, callback_fn: js_sys::Function) -> js_sys::Promise {
     future_to_promise(async move {
+        let callback = move |s: String| {
+            let this = JsValue::NULL;
+            let _ = callback_fn.call1(&this, &JsValue::from_str(&s));
+        };
         // logging to js console.log for now until we can import the real function
-        let result = ollama::stream(text, url, model, task, |s| js_log(&s)).await;
+        let result = ollama::stream(text, url, model, task, callback).await;
         match result {
             Ok(_) => Ok(JsValue::null()),
             Err(err) => {

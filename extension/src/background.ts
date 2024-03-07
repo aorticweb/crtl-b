@@ -7,7 +7,10 @@ chrome.commands.onCommand.addListener(async (command: string) => {
   if (command === "grab-selected-text") {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       let selected = await chrome.tabs.sendMessage(tabs[0].id!, { action: "grabSelectedText" });
-      await stream(selected, "http://localhost:11434/", Model.Llama2, Task.Summarize)
+      async function llm_stream_disp_callback(value: string) {
+        await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMOutput", content: value});
+      }
+      await stream(selected, "http://localhost:11434/", Model.Llama2, Task.Summarize, llm_stream_disp_callback)
       .catch(async (e: any) => {
         await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMFailure"});
         console.error(e);

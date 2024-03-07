@@ -144,14 +144,16 @@ pub async fn stream(
 ) -> Result<(), CTRLBackendError> {
     let resp = request(text, url, model, task, true).await?;
 
-    // Stream the body
     let mut stream = resp.bytes_stream();
-
+    let mut full_response = "".to_string();
     while let Some(item) = stream.next().await {
         match item {
             Ok(bytes) => {
                 let response: Response = bytes.try_into()?;
-                callback(response.response);
+                full_response.push_str(&response.response);
+                // TODO:
+                // Think about not cloning here
+                callback(full_response.clone());
             }
             Err(err) => {
                 return Err(CTRLBackendError::LLM(ErrContent::from_error(
