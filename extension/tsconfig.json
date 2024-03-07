@@ -1,15 +1,13 @@
 {
-    "compilerOptions": {
-      "outDir": "./dist/target",
-      "noImplicitAny": true,
-      "module": "ESNext",
-      "target": "ESNext",
-      "allowJs": true,
-      "moduleResolution": "node"
-    },
-    "include": [
-      "./src/**/*.ts"
-    ],
-    "types": ["chrome"]
+  "compilerOptions": {
+    "outDir": "./dist/target",
+    "noImplicitAny": true,
+    "module": "ESNext",
+    "target": "ES6",
+    "allowJs": true,
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx"
+  },
+  "include": ["./src/**/*.ts"],
+  "types": ["chrome"]
 }
-  

@@ -4,12 +4,31 @@
   "description": "chrome extension for text rewrite using ai",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
   },
   "author": "aorticweb",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
     "@types/chrome": "^0.0.262",
-    "typescript": "^5.3.3"
+    "autoprefixer": "^10.4.18",
+    "css-loader": "^6.10.0",
+    "postcss-loader": "^8.1.1",
+    "sass": "^1.71.1",
+    "sass-loader": "^14.1.1",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.2",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.25",
+    "@types/react": "^18.2.64",
+    "@types/react-dom": "^18.2.21",
+    "bootstrap": "^5.3.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

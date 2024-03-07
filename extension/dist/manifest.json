@@ -28,13 +28,13 @@
     "activeTab"
   ],
   "background": {
-    "service_worker": "target/background.js",
+    "service_worker": "target/background/background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["target/content.js"],
+      "js": ["target/content/content.js"],
       "type": "module"
     }
   ],

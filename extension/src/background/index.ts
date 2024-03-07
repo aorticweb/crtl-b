@@ -1,4 +1,4 @@
-import init, { stream, Model, Task } from './ctrl_b_wasm/ctrl_b.js';
+import init, { stream, Model, Task } from "./ctrl_b_wasm";
 
 // TODO:
 // Implement a mutext to avoid running action in parrallel
