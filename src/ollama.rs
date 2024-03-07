@@ -1,8 +1,9 @@
 use crate::{CTRLBackendError, ErrContent};
 use crate::{Model, Task};
+use bytes::Bytes;
+use futures_util::StreamExt;
 use reqwest::{self, StatusCode};
 use serde::{Deserialize, Serialize};
-// use serde_json;
 
 // const TIME_LIMIT: Duration = Duration::from_secs(30);
 
@@ -23,6 +24,39 @@ struct Payload {
 #[derive(Deserialize)]
 struct Response {
     response: String,
+}
+
+impl TryFrom<String> for Response {
+    type Error = CTRLBackendError;
+    fn try_from(text: String) -> Result<Response, CTRLBackendError> {
+        let ollama_response: serde_json::Result<Response> = serde_json::from_str(&text);
+        if ollama_response.is_err() {
+            return Err(CTRLBackendError::LLM(ErrContent::from_error(
+                format!(
+                    "Failed to parse ollama response text to expected json: text was {}",
+                    text
+                )
+                .as_str(),
+                ollama_response.err().unwrap(),
+            )))?;
+        }
+        Ok(ollama_response.unwrap())
+    }
+}
+
+impl TryFrom<Bytes> for Response {
+    type Error = CTRLBackendError;
+    fn try_from(bytes: Bytes) -> Result<Response, CTRLBackendError> {
+        let ollama_response: serde_json::Result<Response> = serde_json::from_slice(&bytes);
+        if ollama_response.is_err() {
+            return Err(CTRLBackendError::LLM(ErrContent::from_error(
+                format!("Failed to parse ollama response text to expected json from bytes",)
+                    .as_str(),
+                ollama_response.err().unwrap(),
+            )))?;
+        }
+        Ok(ollama_response.unwrap())
+    }
 }
 
 async fn text_or_null(resp: reqwest::Response) -> String {
@@ -46,18 +80,21 @@ fn extract_ollama_api_error(err: reqwest::Error) -> CTRLBackendError {
     CTRLBackendError::LLM(ErrContent::from_error("Unexpected API call failure", err))
 }
 
-pub async fn generate(
+/// Send a request to the ollama backend
+/// Validate (including status code) and return the response
+async fn request(
     text: String,
     url: String,
     model: Model,
     task: Task,
-) -> Result<String, CTRLBackendError> {
+    stream: bool,
+) -> Result<reqwest::Response, CTRLBackendError> {
     let client = reqwest::Client::new();
     let payload = Payload {
         model: model_to_str(model),
         prompt: task.to_prompt(text),
         keep_alive: "15m".to_string(),
-        stream: false,
+        stream: stream,
     };
     let url = url.trim_end_matches('/');
     let resp = client
@@ -72,6 +109,10 @@ pub async fn generate(
     if !resp.status().is_success() {
         return Err(handle_error_status_code(resp).await);
     }
+    return Ok(resp);
+}
+
+async fn text_from_response(resp: reqwest::Response) -> Result<String, CTRLBackendError> {
     let text_content = resp.text().await;
     if text_content.is_err() {
         return Err(CTRLBackendError::LLM(ErrContent::from_error(
@@ -79,17 +120,46 @@ pub async fn generate(
             text_content.err().unwrap(),
         )))?;
     }
-    let text_content = text_content.unwrap();
-    let ollama_response: serde_json::Result<Response> = serde_json::from_str(&text_content);
-    if ollama_response.is_err() {
-        return Err(CTRLBackendError::LLM(ErrContent::from_error(
-            format!(
-                "Failed to parse ollama response text to expected json: text was {}",
-                text_content
-            )
-            .as_str(),
-            ollama_response.err().unwrap(),
-        )))?;
+    Ok(text_content.unwrap())
+}
+
+pub async fn generate(
+    text: String,
+    url: String,
+    model: Model,
+    task: Task,
+) -> Result<String, CTRLBackendError> {
+    let resp = request(text, url, model, task, false).await?;
+    let text_content = text_from_response(resp).await?;
+    let resp: Response = text_content.try_into()?;
+    Ok(resp.response)
+}
+
+pub async fn stream(
+    text: String,
+    url: String,
+    model: Model,
+    task: Task,
+    callback: impl Fn(String),
+) -> Result<(), CTRLBackendError> {
+    let resp = request(text, url, model, task, true).await?;
+
+    // Stream the body
+    let mut stream = resp.bytes_stream();
+
+    while let Some(item) = stream.next().await {
+        match item {
+            Ok(bytes) => {
+                let response: Response = bytes.try_into()?;
+                callback(response.response);
+            }
+            Err(err) => {
+                return Err(CTRLBackendError::LLM(ErrContent::from_error(
+                    "Failed to get bytes from ollama response",
+                    err,
+                )))?;
+            }
+        }
     }
-    Ok(ollama_response.unwrap().response)
+    Ok(())
 }

@@ -6,8 +6,8 @@ mod ollama;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn js_log(s: &str);
 }
 
 #[derive(Debug)]
@@ -115,11 +115,24 @@ pub async fn generate(text: String, url: String, model: Model, task: Task) -> js
     future_to_promise(async move {
         let result = ollama::generate(text, url, model, task).await;
         match result {
-            Ok(content) => {
-                Ok(JsValue::from_str(&content))
-            }
+            Ok(content) => Ok(JsValue::from_str(&content)),
             Err(err) => {
-                log(&format!("{:?}", err.debug()));
+                js_log(&format!("{:?}", err.debug()));
+                Err(JsValue::from_str(&format!("{}", err)))
+            }
+        }
+    })
+}
+
+#[wasm_bindgen]
+pub async fn stream(text: String, url: String, model: Model, task: Task) -> js_sys::Promise {
+    future_to_promise(async move {
+        // logging to js console.log for now until we can import the real function
+        let result = ollama::stream(text, url, model, task, |s| js_log(&s)).await;
+        match result {
+            Ok(_) => Ok(JsValue::null()),
+            Err(err) => {
+                js_log(&format!("{:?}", err.debug()));
                 Err(JsValue::from_str(&format!("{}", err)))
             }
         }
