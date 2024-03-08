@@ -5,18 +5,18 @@ export const TextboxComponent = () => {
   const [isVisible, setIsVisible] = useState(false);
   const componentRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({x: 0, y: 0});
-  const [dragStart, setDragStart] = useState({x: 0, y: 0});
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleMouseMove = (event) => {
       if (isDragging) {
         const dx = event.clientX - dragStart.x;
         const dy = event.clientY - dragStart.y;
-        setPosition({
-          x: position.x + dx,
-          y: position.y + dy,
-        });
+        setPosition((prevPosition) => ({
+          x: prevPosition.x + dx,
+          y: prevPosition.y + dy,
+        }));
         setDragStart({
           x: event.clientX,
           y: event.clientY,
@@ -31,13 +31,16 @@ export const TextboxComponent = () => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragStart, position]);
+  }, [isDragging, dragStart]);
 
   useEffect(() => {
     const messageListener = async (request, sender, sendResponse) => {
@@ -69,19 +72,21 @@ export const TextboxComponent = () => {
     };
   }, []);
 
-  const handleMouseDown = (event: any) => {
-    setIsDragging(true);
-    setDragStart({
-      x: event.clientX,
-      y: event.clientY,
-    });
+  const handleMouseDown = (event) => {
+    if (!event.target.classList.contains('resizable')) {
+      setIsDragging(true);
+      setDragStart({
+        x: event.clientX,
+        y: event.clientY,
+      });
+    }
   };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
   };
 
-  const handleChange = (event: any) => {
+  const handleChange = (event) => {
     setText(event.target.value);
   };
 
@@ -97,12 +102,16 @@ export const TextboxComponent = () => {
     <div
       ref={componentRef}
       onMouseDown={handleMouseDown}
-      className={`fixed z-50 ${isVisible ? 'block' : 'hidden'} p-6 shadow-lg rounded-lg`}
+      className={` ${isVisible ? ' fixed z-50 block shadow-lg rounded-lg resizable' : 'hidden'} `}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         cursor: 'move',
         backgroundColor: '#2C3E50', // Light dark blue background
+        resize: 'both',
+        overflow: 'hidden', // Changed to 'hidden' to ensure overflow from content does not escape the container
+        display: 'flex',
+        flexDirection: 'column', // This makes sure that the textarea and the button div are laid out in a column
       }}
     >
       <textarea
@@ -110,9 +119,11 @@ export const TextboxComponent = () => {
         onChange={handleChange}
         className="form-textarea mt-1 block w-full h-32 p-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm rounded-md"
         style={{
+          resize: 'none', // Disable textarea resizing
           color: '#CAD3C8',
           backgroundColor: 'transparent',
-          borderColor: '#CAD3C8'
+          border: 'none', // Remove the border by setting it to 'none'
+          flex: '1', // Make textarea flexible to fill available space, leaving just enough for the buttons
         }}
       />
       <div className="flex justify-between space-x-2 mt-2">
