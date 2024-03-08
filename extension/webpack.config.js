@@ -25,7 +25,7 @@ module.exports = [
             exclude: /node_modules/,
           },
           {
-            test: /\.(scss)$/,
+            test: /\.(css)$/,
             use: [
               {
                 // Adds CSS to the DOM by injecting a `<style>` tag

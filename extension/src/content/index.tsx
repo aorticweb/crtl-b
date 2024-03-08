@@ -1,3 +1,5 @@
+import './styles/output.css';
+
 import {TextboxComponent} from './box';
 import React from 'react';
 import ReactDOM from 'react-dom';
