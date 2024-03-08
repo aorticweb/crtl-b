@@ -4,6 +4,7 @@ const autoprefixer = require('autoprefixer')
 module.exports = [
   {
     mode: "production",
+    cache: false,
     // content script
     entry: "./src/content/index.tsx",
     output: {
@@ -59,6 +60,7 @@ module.exports = [
   },
   {
     mode: "production",
+    cache: false,
     target: "webworker",
     // background script
     entry: "./src/background/index.ts",
