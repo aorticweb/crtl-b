@@ -1,15 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 export const TextboxComponent = () => {
-  const [text, setText] = useState('...');
-  const [isVisible, setIsVisible] = useState(false);
-  const componentRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [text, setText] = useState<string>("...");
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const componentRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
 
   useEffect(() => {
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event: MouseEvent) => {
       if (isDragging) {
         const dx = event.clientX - dragStart.x;
         const dy = event.clientY - dragStart.y;
@@ -29,21 +34,25 @@ export const TextboxComponent = () => {
     };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, dragStart]);
 
   useEffect(() => {
-    const messageListener = async (request, sender, sendResponse) => {
+    const messageListener = async (
+      request: { action: string; content?: string },
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response?: string) => void
+    ) => {
       if (request.action === "grabSelectedText") {
         const selectedText = window.getSelection()?.toString();
         sendResponse(selectedText);
@@ -53,7 +62,7 @@ export const TextboxComponent = () => {
       }
       if (request.action === "dispLLMOutput") {
         show();
-        setText(request.content);
+        setText(request.content || "");
         sendResponse("content was displayed");
         return true;
       }
@@ -72,8 +81,9 @@ export const TextboxComponent = () => {
     };
   }, []);
 
-  const handleMouseDown = (event) => {
-    if (!event.target.classList.contains('resizable')) {
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (!target.classList.contains("resizable")) {
       setIsDragging(true);
       setDragStart({
         x: event.clientX,
@@ -86,7 +96,7 @@ export const TextboxComponent = () => {
     navigator.clipboard.writeText(text);
   };
 
-  const handleChange = (event) => {
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(event.target.value);
   };
 
@@ -102,16 +112,20 @@ export const TextboxComponent = () => {
     <div
       ref={componentRef}
       onMouseDown={handleMouseDown}
-      className={` ${isVisible ? ' fixed z-50 block shadow-lg rounded-lg resizable' : 'hidden'} `}
+      className={` ${
+        isVisible
+          ? " fixed z-50 block shadow-lg rounded-lg resizable"
+          : "hidden"
+      } `}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
-        cursor: 'move',
-        backgroundColor: '#2C3E50', // Light dark blue background
-        resize: 'both',
-        overflow: 'hidden', // Changed to 'hidden' to ensure overflow from content does not escape the container
-        display: 'flex',
-        flexDirection: 'column', // This makes sure that the textarea and the button div are laid out in a column
+        cursor: "move",
+        backgroundColor: "#2C3E50", // Light dark blue background
+        resize: "both",
+        overflow: "hidden", // Changed to 'hidden' to ensure overflow from content does not escape the container
+        display: "flex",
+        flexDirection: "column", // This makes sure that the textarea and the button div are laid out in a column
       }}
     >
       <textarea
@@ -119,27 +133,29 @@ export const TextboxComponent = () => {
         onChange={handleChange}
         className="form-textarea mt-1 block w-full h-32 p-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm rounded-md"
         style={{
-          resize: 'none', // Disable textarea resizing
-          color: '#CAD3C8',
-          backgroundColor: 'transparent',
-          border: 'none', // Remove the border by setting it to 'none'
-          flex: '1', // Make textarea flexible to fill available space, leaving just enough for the buttons
+          resize: "none", // Disable textarea resizing
+          color: "#CAD3C8",
+          backgroundColor: "transparent",
+          border: "none", // Remove the border by setting it to 'none'
+          flex: "1", // Make textarea flexible to fill available space, leaving just enough for the buttons
         }}
       />
-      <div className="flex justify-between space-x-2 mt-2">
-        <button
-          onClick={handleCopy}
-          className="inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-medium rounded-full cursor-pointer"
-        >
-          Copy
-        </button>
-        <button
-          onClick={hide}
-          className="inline-flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-medium rounded-full cursor-pointer"
-        >
-          Close
-        </button>
+      <div className="flex justify-end mt-2">
+        <div className="space-x-2">
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-medium rounded-full cursor-pointer"
+          >
+            Copy
+          </button>
+          <button
+            onClick={hide}
+            className="inline-flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-medium rounded-full cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
-  );  
+  );
 };

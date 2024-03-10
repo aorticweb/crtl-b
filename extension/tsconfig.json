@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "outDir": "./dist/target",
-    // "noImplicitAny": true,
+    "noImplicitAny": true,
     "module": "ESNext",
     "target": "ES6",
     "allowJs": true,
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
-  "include": ["./src/**/*.ts"],
-  "types": ["chrome"]
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
+  "types": ["@types/chrome"]
 }

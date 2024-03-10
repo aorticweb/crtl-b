@@ -1,5 +1,5 @@
 const path = require("path");
-const autoprefixer = require('autoprefixer')
+const autoprefixer = require("autoprefixer");
 
 module.exports = [
   {
@@ -20,38 +20,36 @@ module.exports = [
           exclude: /node_modules/,
         },
         {
-            test: /\.tsx$/,
-            use: "ts-loader",
-            exclude: /node_modules/,
-          },
-          {
-            test: /\.(css)$/,
-            use: [
-              {
-                // Adds CSS to the DOM by injecting a `<style>` tag
-                loader: 'style-loader'
+          test: /\.tsx$/,
+          use: "ts-loader",
+          exclude: /node_modules/,
+        },
+        {
+          test: /\.(css)$/,
+          use: [
+            {
+              // Adds CSS to the DOM by injecting a `<style>` tag
+              loader: "style-loader",
+            },
+            {
+              // Interprets `@import` and `url()` like `import/require()` and will resolve them
+              loader: "css-loader",
+            },
+            {
+              // Loader for webpack to process CSS with PostCSS
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [autoprefixer],
+                },
               },
-              {
-                // Interprets `@import` and `url()` like `import/require()` and will resolve them
-                loader: 'css-loader'
-              },
-              {
-                // Loader for webpack to process CSS with PostCSS
-                loader: 'postcss-loader',
-                options: {
-                  postcssOptions: {
-                    plugins: [
-                      autoprefixer
-                    ]
-                  }
-                }
-              },
-              {
-                // Loads a SASS/SCSS file and compiles it to CSS
-                loader: 'sass-loader'
-              }
-            ]
-          }
+            },
+            {
+              // Loads a SASS/SCSS file and compiles it to CSS
+              loader: "sass-loader",
+            },
+          ],
+        },
       ],
     },
     resolve: {
@@ -70,16 +68,16 @@ module.exports = [
       clean: true,
     },
     module: {
-        rules: [
-          {
-            test: /\.ts$/,
-            use: "ts-loader",
-            exclude: /node_modules/,
-          },
-        ],
-      },
-      resolve: {
-        extensions: [".ts", ".js"], // Resolve these file types
-      },
+      rules: [
+        {
+          test: /\.ts$/,
+          use: "ts-loader",
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      extensions: [".ts", ".js"], // Resolve these file types
+    },
   },
 ];
