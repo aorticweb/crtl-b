@@ -10,7 +10,7 @@ export const TextboxComponent = () => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [position, setPosition] = useState<Position>({ x: window.innerWidth - 550, y: 0 });
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -112,12 +112,13 @@ export const TextboxComponent = () => {
     <div
       ref={componentRef}
       onMouseDown={handleMouseDown}
-      className={` ${
+      className={`ctrl-b-text ${
         isVisible
           ? " fixed z-50 block shadow-lg rounded-lg resizable"
           : "hidden"
       } `}
-      style={{
+      style={
+        {
         left: `${position.x}px`,
         top: `${position.y}px`,
         cursor: "move",

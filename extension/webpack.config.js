@@ -36,11 +36,13 @@ module.exports = [
               loader: "css-loader",
             },
             {
-              // Loader for webpack to process CSS with PostCSS
-              loader: "postcss-loader",
+              loader: 'postcss-loader',
               options: {
                 postcssOptions: {
-                  plugins: [autoprefixer],
+                  plugins: [
+                    require('postcss-preset-env'),
+                    require('tailwindcss'),
+                  ],
                 },
               },
             },

@@ -23,10 +23,7 @@
       "description": "extension entry point grab selected text and perform downstream actions"
     }
   },
-  "permissions": [
-    "scripting",
-    "activeTab"
-  ],
+  "permissions": ["scripting", "activeTab"],
   "background": {
     "service_worker": "target/background/background.js",
     "type": "module"
@@ -35,10 +32,16 @@
     {
       "matches": ["<all_urls>"],
       "js": ["target/content/content.js"],
-      "type": "module"
+      "css": ["target/content/styles/output.css"]
     }
   ],
   "content_security_policy": {
     "extension_pages": "default-src 'self' 'wasm-unsafe-eval'; connect-src http://localhost:11434/api/generate;"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["target/content/styles/output.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
