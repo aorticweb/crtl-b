@@ -1,5 +1,4 @@
-use crate::{CTRLBackendError, ErrContent};
-use crate::{Model, Task};
+use crate::{CTRLBackendError, ErrContent, Model};
 use bytes::Bytes;
 use futures_util::StreamExt;
 use reqwest::{self, StatusCode};
@@ -83,16 +82,15 @@ fn extract_ollama_api_error(err: reqwest::Error) -> CTRLBackendError {
 /// Send a request to the ollama backend
 /// Validate (including status code) and return the response
 async fn request(
-    text: String,
+    prompt: String,
     url: String,
     model: Model,
-    task: Task,
     stream: bool,
 ) -> Result<reqwest::Response, CTRLBackendError> {
     let client = reqwest::Client::new();
     let payload = Payload {
         model: model_to_str(model),
-        prompt: task.to_prompt(text),
+        prompt: prompt,
         keep_alive: "15m".to_string(),
         stream: stream,
     };
@@ -112,38 +110,13 @@ async fn request(
     return Ok(resp);
 }
 
-async fn text_from_response(resp: reqwest::Response) -> Result<String, CTRLBackendError> {
-    let text_content = resp.text().await;
-    if text_content.is_err() {
-        return Err(CTRLBackendError::LLM(ErrContent::from_error(
-            "Failed to get text response from ollama response",
-            text_content.err().unwrap(),
-        )))?;
-    }
-    Ok(text_content.unwrap())
-}
-
-pub async fn generate(
-    text: String,
-    url: String,
-    model: Model,
-    task: Task,
-) -> Result<String, CTRLBackendError> {
-    let resp = request(text, url, model, task, false).await?;
-    let text_content = text_from_response(resp).await?;
-    let resp: Response = text_content.try_into()?;
-    Ok(resp.response)
-}
-
 pub async fn stream(
-    text: String,
+    prompt: String,
     url: String,
     model: Model,
-    task: Task,
     callback: impl Fn(String),
 ) -> Result<(), CTRLBackendError> {
-    let resp = request(text, url, model, task, true).await?;
-
+    let resp = request(prompt, url, model, true).await?;
     let mut stream = resp.bytes_stream();
     let mut full_response = "".to_string();
     while let Some(item) = stream.next().await {

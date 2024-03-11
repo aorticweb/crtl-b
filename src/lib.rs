@@ -92,47 +92,19 @@ pub enum Model {
     Llama2,
 }
 
-#[wasm_bindgen]
-pub enum Task {
-    Summarize,
-}
-
-impl Task {
-    pub fn to_prompt(&self, text: String) -> String {
-        match self {
-            Task::Summarize => format!(
-                "Summarize the text below, keep it as succint as possible while keeping the general idea of the text:
-            ```
-            {}
-            ```
-            ", text),
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub async fn generate(text: String, url: String, model: Model, task: Task) -> js_sys::Promise {
-    future_to_promise(async move {
-        let result = ollama::generate(text, url, model, task).await;
-        match result {
-            Ok(content) => Ok(JsValue::from_str(&content)),
-            Err(err) => {
-                js_log(&format!("{:?}", err.debug()));
-                Err(JsValue::from_str(&format!("{}", err)))
-            }
-        }
-    })
-}
-
-#[wasm_bindgen]
-pub async fn stream(text: String, url: String, model: Model, task: Task, callback_fn: js_sys::Function) -> js_sys::Promise {
+async fn stream(
+    prompt: String,
+    url: String,
+    model: Model,
+    callback_fn: js_sys::Function,
+) -> js_sys::Promise {
     future_to_promise(async move {
         let callback = move |s: String| {
             let this = JsValue::NULL;
             let _ = callback_fn.call1(&this, &JsValue::from_str(&s));
         };
         // logging to js console.log for now until we can import the real function
-        let result = ollama::stream(text, url, model, task, callback).await;
+        let result = ollama::stream(prompt, url, model, callback).await;
         match result {
             Ok(_) => Ok(JsValue::null()),
             Err(err) => {
@@ -141,4 +113,68 @@ pub async fn stream(text: String, url: String, model: Model, task: Task, callbac
             }
         }
     })
+}
+
+fn summarize_task_to_prompt(text: String) -> String {
+    format!(
+        "Summarize the text below, keep it as succint as possible while keeping the general idea of the text, only include the summarization in your response:
+    ```
+    {}
+    ```
+    ", text)
+}
+
+#[wasm_bindgen]
+pub async fn summarize_task(
+    text: String,
+    url: String,
+    model: Model,
+    callback_fn: js_sys::Function,
+) -> js_sys::Promise {
+    let prompt = summarize_task_to_prompt(text);
+    return stream(prompt, url, model, callback_fn).await;
+}
+
+#[wasm_bindgen]
+pub enum Tone {
+    Professional,
+    Casual,
+    StraightForward,
+    Confident,
+    Friendly,
+    Strict,
+}
+
+impl Tone {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Tone::Professional => "professional",
+            Tone::Casual => "casual",
+            Tone::StraightForward => "straight forward",
+            Tone::Confident => "confident",
+            Tone::Friendly => "friendly",
+            Tone::Strict => "strict",
+        }
+    }
+}
+
+fn change_tone_task_to_prompt(text: String, tone: Tone) -> String {
+    format!(
+        "Re write the text below, to make it more {} while keeping the general idea of the text and it's length, only include the rewritten text in your response:
+    ```
+    {}
+    ```
+    ", tone.as_str(), text)
+}
+
+#[wasm_bindgen]
+pub async fn change_tone_task(
+    text: String,
+    url: String,
+    model: Model,
+    tone: Tone,
+    callback_fn: js_sys::Function,
+) -> js_sys::Promise {
+    let prompt = change_tone_task_to_prompt(text, tone);
+    return stream(prompt, url, model, callback_fn).await;
 }

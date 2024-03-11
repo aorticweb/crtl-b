@@ -23,7 +23,7 @@
       "description": "extension entry point grab selected text and perform downstream actions"
     }
   },
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["scripting", "activeTab", "contextMenus"],
   "background": {
     "service_worker": "target/background/background.js",
     "type": "module"
