@@ -121,6 +121,8 @@ export const TextboxComponent = () => {
         {
         left: `${position.x}px`,
         top: `${position.y}px`,
+        width: "500px",
+        height: "300px",
         cursor: "move",
         backgroundColor: "#2C3E50", // Light dark blue background
         resize: "both",
