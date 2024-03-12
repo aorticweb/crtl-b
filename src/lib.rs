@@ -163,7 +163,7 @@ fn improve_writing_prompt(text: String) -> String {
 
 fn bullet_points_prompt(text: String) -> String {
     format!(
-        "Re write the text below, in a few bullet points summarizing the important points, only include the rewritten text in your response:
+        "Re write the text below, in a few bullet points list where bullet points summarize an important points from the text use the smallest amount of bullet points possible to represent the information contained in the text, after each bulet point, go to a new line, only include the rewritten text in your response:
     ```
     {}
     ```

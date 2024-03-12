@@ -7,15 +7,17 @@ import init, {
   TextTask,
 } from "./ctrl_b_wasm/ctrl_b.js";
 
-let llm_opts: LLMRunOptions | undefined = null;
 
 chrome.runtime.onInstalled.addListener(async () => {
   const _ = await init();
-  llm_opts = new LLMRunOptions(Model.Llama2, "http://localhost:11434/");
 });
 
-async function get_selected_text(tabs: chrome.tabs.Tab[]): Promise<string> {
-  return await chrome.tabs.sendMessage(tabs[0].id!, {
+function llm_opts(): LLMRunOptions {
+  return new LLMRunOptions(Model.Llama2, "http://localhost:11434/");
+}
+
+async function get_selected_text(tab: chrome.tabs.Tab): Promise<string> {
+  return await chrome.tabs.sendMessage(tab.id!, {
     action: "grabSelectedText",
   });
 }
@@ -36,8 +38,8 @@ function llm_stream_text_task(task: TextTask): void {
     { active: true, currentWindow: true },
     async (tabs: chrome.tabs.Tab[]) => {
       stream_text_task(
-        await get_selected_text(tabs),
-        llm_opts,
+        await get_selected_text(tabs[0]),
+        llm_opts(),
         task,
         create_llm_stream_disp_callback(tabs[0].id!)
       ).catch(async (e: any) => {
@@ -55,8 +57,8 @@ function llm_stream_change_tone_task(tone: Tone): void {
     { active: true, currentWindow: true },
     async (tabs: chrome.tabs.Tab[]) => {
       await stream_change_tone_task(
-        await get_selected_text(tabs),
-        llm_opts,
+        await get_selected_text(tabs[0]),
+        llm_opts(),
         tone,
         create_llm_stream_disp_callback(tabs[0].id!)
       ).catch(async (e: any) => {
@@ -133,7 +135,7 @@ chrome.contextMenus.create({
 const tone_options: { enum: Tone; name: string }[] = [
   { enum: Tone.Professional, name: "Professional" },
   { enum: Tone.Casual, name: "Casual" },
-  {enum: Tone.StraightForward, name: "Straight forward",},
+  { enum: Tone.StraightForward, name: "Straight forward" },
   { enum: Tone.Confident, name: "Confident" },
   { enum: Tone.Friendly, name: "Friendly" },
   { enum: Tone.Strict, name: "Strict" },
@@ -142,7 +144,7 @@ const tone_options: { enum: Tone; name: string }[] = [
 tone_options.forEach((tone_opt) => {
   add_to_action_menu(
     {
-      id: "ctrl-b-tone-" + tone_opt.name ,
+      id: "ctrl-b-tone-" + tone_opt.name,
       title: tone_opt.name,
       contexts: ["all"],
       parentId: "ctrl-b-tone",

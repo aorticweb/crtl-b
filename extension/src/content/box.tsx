@@ -117,49 +117,43 @@ export const TextboxComponent = () => {
       onMouseDown={handleMouseDown}
       className={`ctrl-b-text ${
         isVisible
-          ? " fixed z-50 block shadow-lg rounded-lg resizable"
+          ? "fixed z-50 block shadow-lg rounded-lg resizable bg-gray-800 overflow-auto"
           : "hidden"
-      } `}
+      }`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: "500px",
         height: "300px",
         cursor: "move",
-        backgroundColor: "#2C3E50",
         resize: "both",
-        overflow: "hidden",
         display: `${isVisible ? "flex" : "none"}`,
         flexDirection: "column",
       }}
     >
-      <textarea
-        value={text}
-        onChange={handleChange}
-        className="form-textarea mt-1 block w-full h-32 p-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm rounded-md"
-        style={{
-          resize: "none",
-          color: "#CAD3C8",
-          backgroundColor: "transparent",
-          border: "none",
-          flex: "1",
-        }}
-      />
-      <div className="flex justify-end mt-2">
-        <div className="space-x-2">
-          <button
-            onClick={handleCopy}
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-medium rounded-full cursor-pointer"
-          >
-            Copy
-          </button>
-          <button
-            onClick={hide}
-            className="inline-flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-medium rounded-full cursor-pointer"
-          >
-            Close
-          </button>
-        </div>
+      <div className="flex-1 p-4">
+        <textarea
+          value={text}
+          onChange={handleChange}
+          className="w-full h-full p-4 text-gray-200 bg-gray-700 rounded-lg shadow-inner resize-none focus:outline-none"
+          style={{
+            minHeight: "150px",
+          }}
+        />
+      </div>
+      <div className="flex justify-between items-center px-4 py-2 bg-gray-900">
+        <button
+          onClick={handleCopy}
+          className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+        >
+          Copy
+        </button>
+        <button
+          onClick={hide}
+          className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+        >
+          Close
+        </button>
       </div>
     </div>
   );
