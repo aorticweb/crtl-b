@@ -10,7 +10,10 @@ export const TextboxComponent = () => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [position, setPosition] = useState<Position>({ x: window.innerWidth - 550, y: 0 });
+  const [position, setPosition] = useState<Position>({
+    x: window.innerWidth - 550,
+    y: 0,
+  });
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -117,18 +120,17 @@ export const TextboxComponent = () => {
           ? " fixed z-50 block shadow-lg rounded-lg resizable"
           : "hidden"
       } `}
-      style={
-        {
+      style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: "500px",
         height: "300px",
         cursor: "move",
-        backgroundColor: "#2C3E50", // Light dark blue background
+        backgroundColor: "#2C3E50",
         resize: "both",
-        overflow: "hidden", // Changed to 'hidden' to ensure overflow from content does not escape the container
-        display: "flex",
-        flexDirection: "column", // This makes sure that the textarea and the button div are laid out in a column
+        overflow: "hidden",
+        display: `${isVisible ? "flex" : "none"}`,
+        flexDirection: "column",
       }}
     >
       <textarea
@@ -136,11 +138,11 @@ export const TextboxComponent = () => {
         onChange={handleChange}
         className="form-textarea mt-1 block w-full h-32 p-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm rounded-md"
         style={{
-          resize: "none", // Disable textarea resizing
+          resize: "none",
           color: "#CAD3C8",
           backgroundColor: "transparent",
-          border: "none", // Remove the border by setting it to 'none'
-          flex: "1", // Make textarea flexible to fill available space, leaving just enough for the buttons
+          border: "none",
+          flex: "1",
         }}
       />
       <div className="flex justify-end mt-2">

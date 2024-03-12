@@ -92,6 +92,84 @@ pub enum Model {
     Llama2,
 }
 
+#[wasm_bindgen]
+#[derive(Debug, Clone)]
+pub struct LLMRunOptions {
+    model: Model,
+    url: String,
+}
+
+#[wasm_bindgen]
+impl LLMRunOptions {
+    #[wasm_bindgen(constructor)]
+    pub fn new(model: Model, url: String) -> Self {
+        Self { model, url }
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn model(&self) -> Model {
+        self.model
+    }
+    #[wasm_bindgen(setter)]
+    pub fn set_model(&mut self, model: Model) {
+        self.model = model;
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn url(&self) -> String {
+        self.url.clone()
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_url(&mut self, url: String) {
+        self.url = url
+    }
+}
+
+// simple task that only depends on text
+#[wasm_bindgen]
+pub enum TextTask {
+    Summarize,
+    ImproveWriting,
+    BulletPoints,
+}
+
+impl TextTask {
+    fn prompt(&self, text: String) -> String {
+        match self {
+            TextTask::Summarize => summarize_prompt(text),
+            TextTask::ImproveWriting => improve_writing_prompt(text),
+            TextTask::BulletPoints => bullet_points_prompt(text),
+        }
+    }
+}
+
+fn summarize_prompt(text: String) -> String {
+    format!(
+        "Summarize the text below, keep it as succint as possible while keeping the general idea of the text, only include the summarization in your response:
+    ```
+    {}
+    ```
+    ", text)
+}
+fn improve_writing_prompt(text: String) -> String {
+    format!(
+        "Re write the text below, to make to improve the overall writting and clarity while keeping the general idea of the text and it's length, only include the rewritten text in your response:
+    ```
+    {}
+    ```
+    ", text)
+}
+
+fn bullet_points_prompt(text: String) -> String {
+    format!(
+        "Re write the text below, in a few bullet points summarizing the important points, only include the rewritten text in your response:
+    ```
+    {}
+    ```
+    ", text)
+}
+
 async fn stream(
     prompt: String,
     url: String,
@@ -115,24 +193,14 @@ async fn stream(
     })
 }
 
-fn summarize_task_to_prompt(text: String) -> String {
-    format!(
-        "Summarize the text below, keep it as succint as possible while keeping the general idea of the text, only include the summarization in your response:
-    ```
-    {}
-    ```
-    ", text)
-}
-
 #[wasm_bindgen]
-pub async fn summarize_task(
+pub async fn stream_text_task(
     text: String,
-    url: String,
-    model: Model,
+    opts: LLMRunOptions,
+    task: TextTask,
     callback_fn: js_sys::Function,
 ) -> js_sys::Promise {
-    let prompt = summarize_task_to_prompt(text);
-    return stream(prompt, url, model, callback_fn).await;
+    return stream(task.prompt(text), opts.url, opts.model, callback_fn).await;
 }
 
 #[wasm_bindgen]
@@ -158,7 +226,7 @@ impl Tone {
     }
 }
 
-fn change_tone_task_to_prompt(text: String, tone: Tone) -> String {
+fn change_tone_prompt(text: String, tone: Tone) -> String {
     format!(
         "Re write the text below, to make it more {} while keeping the general idea of the text and it's length, only include the rewritten text in your response:
     ```
@@ -168,13 +236,12 @@ fn change_tone_task_to_prompt(text: String, tone: Tone) -> String {
 }
 
 #[wasm_bindgen]
-pub async fn change_tone_task(
+pub async fn stream_change_tone_task(
     text: String,
-    url: String,
-    model: Model,
+    opts: LLMRunOptions,
     tone: Tone,
     callback_fn: js_sys::Function,
 ) -> js_sys::Promise {
-    let prompt = change_tone_task_to_prompt(text, tone);
-    return stream(prompt, url, model, callback_fn).await;
+    let prompt = change_tone_prompt(text, tone);
+    return stream(prompt, opts.url, opts.model, callback_fn).await;
 }

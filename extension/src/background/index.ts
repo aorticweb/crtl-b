@@ -1,94 +1,156 @@
-import { func } from "prop-types";
-import init, { summarize_task, change_tone_task, Tone, Model} from "./ctrl_b_wasm/ctrl_b.js";
+import init, {
+  stream_change_tone_task,
+  stream_text_task,
+  LLMRunOptions,
+  Tone,
+  Model,
+  TextTask,
+} from "./ctrl_b_wasm/ctrl_b.js";
 
+let llm_opts: LLMRunOptions | undefined = null;
 
 chrome.runtime.onInstalled.addListener(async () => {
   const _ = await init();
+  llm_opts = new LLMRunOptions(Model.Llama2, "http://localhost:11434/");
 });
 
-function summarize(): void{
-  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    let selected = await chrome.tabs.sendMessage(tabs[0].id!, { action: "grabSelectedText" });
-    async function llm_stream_disp_callback(value: string) {
-      await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMOutput", content: value});
-    }
-    await summarize_task(selected, "http://localhost:11434/", Model.Llama2, llm_stream_disp_callback)
-    .catch(async (e: any) => {
-      await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMFailure"});
-      console.error(e);
-    })
+async function get_selected_text(tabs: chrome.tabs.Tab[]): Promise<string> {
+  return await chrome.tabs.sendMessage(tabs[0].id!, {
+    action: "grabSelectedText",
   });
 }
 
-function change_tone(tone: Tone): void{
-  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    let selected = await chrome.tabs.sendMessage(tabs[0].id!, { action: "grabSelectedText" });
-    async function llm_stream_disp_callback(value: string) {
-      await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMOutput", content: value});
-    }
-    await change_tone_task(selected, "http://localhost:11434/", Model.Llama2, tone, llm_stream_disp_callback)
-    .catch(async (e: any) => {
-      await chrome.tabs.sendMessage(tabs[0].id!, { action: "dispLLMFailure"});
-      console.error(e);
-    })
-  });
+function create_llm_stream_disp_callback(
+  tabId: number
+): (value: string) => Promise<void> {
+  return async function llm_stream_disp_callback(value: string) {
+    await chrome.tabs.sendMessage(tabId, {
+      action: "dispLLMOutput",
+      content: value,
+    });
+  };
 }
 
+function llm_stream_text_task(task: TextTask): void {
+  chrome.tabs.query(
+    { active: true, currentWindow: true },
+    async (tabs: chrome.tabs.Tab[]) => {
+      stream_text_task(
+        await get_selected_text(tabs),
+        llm_opts,
+        task,
+        create_llm_stream_disp_callback(tabs[0].id!)
+      ).catch(async (e: any) => {
+        await chrome.tabs.sendMessage(tabs[0].id!, {
+          action: "dispLLMFailure",
+        });
+        console.error(e);
+      });
+    }
+  );
+}
 
-// TODO:
-// Implement a mutext to avoid running action in parrallel
+function llm_stream_change_tone_task(tone: Tone): void {
+  chrome.tabs.query(
+    { active: true, currentWindow: true },
+    async (tabs: chrome.tabs.Tab[]) => {
+      await stream_change_tone_task(
+        await get_selected_text(tabs),
+        llm_opts,
+        tone,
+        create_llm_stream_disp_callback(tabs[0].id!)
+      ).catch(async (e: any) => {
+        await chrome.tabs.sendMessage(tabs[0].id!, {
+          action: "dispLLMFailure",
+        });
+        console.error(e);
+      });
+    }
+  );
+}
+
 chrome.commands.onCommand.addListener(async (command: string) => {
   if (command === "grab-selected-text") {
-    summarize();
+    llm_stream_text_task(TextTask.Summarize);
   }
 });
 
+const action_menu: Record<string, () => void> = {};
+
+// Order is important as the
+function add_to_action_menu(
+  action: chrome.contextMenus.CreateProperties,
+  callback: () => void
+) {
+  chrome.contextMenus.create(action as chrome.contextMenus.CreateProperties);
+  action_menu[action.id] = callback;
+}
+
+// Base menu
+chrome.contextMenus.create({
+  id: "ctrl-b-main",
+  title: "CTRL-B",
+  contexts: ["all"],
+});
+
+add_to_action_menu(
+  {
+    id: "ctrl-b-summarize",
+    title: "Summarize",
+    contexts: ["all"],
+    parentId: "ctrl-b-main",
+  },
+  () => llm_stream_text_task(TextTask.Summarize)
+);
+
+add_to_action_menu(
+  {
+    id: "ctrl-b-improve-writing",
+    title: "Improve Writing",
+    contexts: ["all"],
+    parentId: "ctrl-b-main",
+  },
+  () => llm_stream_text_task(TextTask.ImproveWriting)
+);
+
+add_to_action_menu(
+  {
+    id: "ctrl-b-bullet-points",
+    title: "Bullet Points",
+    contexts: ["all"],
+    parentId: "ctrl-b-main",
+  },
+  () => llm_stream_text_task(TextTask.BulletPoints)
+);
 
 chrome.contextMenus.create({
-  id: 'ctrl-b-main',
-  title: 'CTRL-B',
-  contexts: ['all'],
+  id: "ctrl-b-tone",
+  title: "Change Writing Tone",
+  contexts: ["all"],
+  parentId: "ctrl-b-main",
 });
 
-chrome.contextMenus.create({
-  id: 'ctrl-b-summarize',
-  title: 'Summarize',
-  contexts: ['all'],
-  parentId: 'ctrl-b-main'
+const tone_options: { enum: Tone; name: string }[] = [
+  { enum: Tone.Professional, name: "Professional" },
+  { enum: Tone.Casual, name: "Casual" },
+  {enum: Tone.StraightForward, name: "Straight forward",},
+  { enum: Tone.Confident, name: "Confident" },
+  { enum: Tone.Friendly, name: "Friendly" },
+  { enum: Tone.Strict, name: "Strict" },
+];
+
+tone_options.forEach((tone_opt) => {
+  add_to_action_menu(
+    {
+      id: "ctrl-b-tone-" + tone_opt.name ,
+      title: tone_opt.name,
+      contexts: ["all"],
+      parentId: "ctrl-b-tone",
+    },
+    () => llm_stream_change_tone_task(tone_opt.enum)
+  );
 });
-
-
-chrome.contextMenus.create({
-  id: 'ctrl-b-tone',
-  title: 'Change Tone',
-  contexts: ['all'],
-  parentId: 'ctrl-b-main'
-});
-
-
-const tone_options: Record<string, {enum: Tone, name: string}> = {
-  "ctrl-b-tone-professional":     {enum:Tone.Professional, name:"Professional"},
-  "ctrl-b-tone-casual":           {enum:Tone.Casual,name:"Casual"},
-  "ctrl-b-tone-straightforward":  {enum:Tone.StraightForward ,name:"Straight forward"},
-  "ctrl-b-tone-confident":        {enum:Tone.Confident ,name:"Confident"},
-  "ctrl-b-tone-friendly":         {enum:Tone.Friendly ,name:"Friendly"},
-  "ctrl-b-tone-strict":           {enum:Tone.Strict ,name:"Strict"},
-};
-
-Object.keys(tone_options).forEach((id) => {
-  chrome.contextMenus.create({
-    id: id,
-    title: tone_options[id].name,
-    contexts: ['all'],
-    parentId: 'ctrl-b-tone'
-  });
-});
-
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'ctrl-b-summarize') {
-    summarize();
-  } else if (info.menuItemId in tone_options) {
-    change_tone(tone_options[info.menuItemId].enum);
-  }
+  action_menu[info.menuItemId]();
 });
