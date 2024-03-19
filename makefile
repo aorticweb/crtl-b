@@ -7,4 +7,3 @@ build-wasm-backend:
 
 build-chrome-extension:
 	cd extension && make build
-	# cp -r ./extension/src/ctrl_b_wasm/ ./extension/dist/target/ctrl_b_wasm/

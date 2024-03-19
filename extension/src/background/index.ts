@@ -7,9 +7,62 @@ import init, {
   TextTask,
 } from "./ctrl_b_wasm/ctrl_b.js";
 
-
 chrome.runtime.onInstalled.addListener(async () => {
   const _ = await init();
+  // Base menu
+  chrome.contextMenus.create({
+    id: "ctrl-b-main",
+    title: "CTRL-B",
+    contexts: ["all"],
+  });
+
+  add_to_action_menu(
+    {
+      id: "ctrl-b-summarize",
+      title: "Summarize",
+      contexts: ["all"],
+      parentId: "ctrl-b-main",
+    },
+    () => llm_stream_text_task(TextTask.Summarize)
+  );
+
+  add_to_action_menu(
+    {
+      id: "ctrl-b-improve-writing",
+      title: "Improve Writing",
+      contexts: ["all"],
+      parentId: "ctrl-b-main",
+    },
+    () => llm_stream_text_task(TextTask.ImproveWriting)
+  );
+
+  add_to_action_menu(
+    {
+      id: "ctrl-b-bullet-points",
+      title: "Bullet Points",
+      contexts: ["all"],
+      parentId: "ctrl-b-main",
+    },
+    () => llm_stream_text_task(TextTask.BulletPoints)
+  );
+
+  chrome.contextMenus.create({
+    id: "ctrl-b-tone",
+    title: "Change Writing Tone",
+    contexts: ["all"],
+    parentId: "ctrl-b-main",
+  });
+  tone_options.forEach((tone_opt) => {
+    add_to_action_menu(
+      {
+        id: "ctrl-b-tone-" + tone_opt.name,
+        title: tone_opt.name,
+        contexts: ["all"],
+        parentId: "ctrl-b-tone",
+      },
+      () => llm_stream_change_tone_task(tone_opt.enum)
+    );
+  });
 });
 
 function llm_opts(): LLMRunOptions {
@@ -17,6 +70,8 @@ function llm_opts(): LLMRunOptions {
 }
 
 async function get_selected_text(tab: chrome.tabs.Tab): Promise<string> {
+  console.log(tab);
+  console.log(tab.id);
   return await chrome.tabs.sendMessage(tab.id!, {
     action: "grabSelectedText",
   });
@@ -88,50 +143,6 @@ function add_to_action_menu(
   action_menu[action.id] = callback;
 }
 
-// Base menu
-chrome.contextMenus.create({
-  id: "ctrl-b-main",
-  title: "CTRL-B",
-  contexts: ["all"],
-});
-
-add_to_action_menu(
-  {
-    id: "ctrl-b-summarize",
-    title: "Summarize",
-    contexts: ["all"],
-    parentId: "ctrl-b-main",
-  },
-  () => llm_stream_text_task(TextTask.Summarize)
-);
-
-add_to_action_menu(
-  {
-    id: "ctrl-b-improve-writing",
-    title: "Improve Writing",
-    contexts: ["all"],
-    parentId: "ctrl-b-main",
-  },
-  () => llm_stream_text_task(TextTask.ImproveWriting)
-);
-
-add_to_action_menu(
-  {
-    id: "ctrl-b-bullet-points",
-    title: "Bullet Points",
-    contexts: ["all"],
-    parentId: "ctrl-b-main",
-  },
-  () => llm_stream_text_task(TextTask.BulletPoints)
-);
-
-chrome.contextMenus.create({
-  id: "ctrl-b-tone",
-  title: "Change Writing Tone",
-  contexts: ["all"],
-  parentId: "ctrl-b-main",
-});
-
 const tone_options: { enum: Tone; name: string }[] = [
   { enum: Tone.Professional, name: "Professional" },
   { enum: Tone.Casual, name: "Casual" },
@@ -140,18 +151,6 @@ const tone_options: { enum: Tone; name: string }[] = [
   { enum: Tone.Friendly, name: "Friendly" },
   { enum: Tone.Strict, name: "Strict" },
 ];
-
-tone_options.forEach((tone_opt) => {
-  add_to_action_menu(
-    {
-      id: "ctrl-b-tone-" + tone_opt.name,
-      title: tone_opt.name,
-      contexts: ["all"],
-      parentId: "ctrl-b-tone",
-    },
-    () => llm_stream_change_tone_task(tone_opt.enum)
-  );
-});
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   action_menu[info.menuItemId]();
